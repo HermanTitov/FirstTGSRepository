@@ -21,52 +21,92 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 @RestController
-@RequestMapping("/menu")
 @RequiredArgsConstructor
+@RequestMapping("/dishes") // Предполагаемый маппинг для контекста блюд
 @Slf4j
-public class MenuController {
+public class DishController {
 
     private final DishesService dishesService;
     private final DishMapper dishMapper;
 
+    /// Вывод всех блюд
     @GetMapping("/all")
     public ResponseEntity<List<DishFullDTO>> getAllDishes() {
-        log.debug("Get all dishes");
+        log.info("API Request: Get all full dishes");
+
         List<DishFullDTO> dishes = dishesService.findAll()
                 .stream().map(dishMapper::convertToFullDTO).toList();
+
+        log.info("API Response: Returned {} full dishes", dishes.size());
         return ResponseEntity.ok(dishes);
     }
-@GetMapping
+
+    /// Получить все блюда короткими
+    @GetMapping
     public ResponseEntity<List<DishShortDTO>> getAllDishesShort() {
-        log.debug("Get all dishes short");
+        log.info("API Request: Get all short dishes");
+
         List<DishShortDTO> dishesShort = dishesService.findAll()
                 .stream().map(dishMapper::convertToShortDTO).toList();
+
+        log.info("API Response: Returned {} short dishes", dishesShort.size());
         return ResponseEntity.ok(dishesShort);
     }
+
+    /// Получить полное блюдо
+    @GetMapping("/{id}")
+    public ResponseEntity<DishFullDTO> getDishFullDTO(@PathVariable Long id){
+        log.info("API Request: Get full dish by id={}", id);
+
+        DishFullDTO dishFullDTO = dishMapper.convertToFullDTO(dishesService.getDish(id));
+
+        log.info("API Response: Successfully retrieved dish id={}", id);
+        return ResponseEntity.ok(dishFullDTO); // Исправлен пропущенный объект в ответе
+    }
+
+    /// Получить страничку блюд
     @GetMapping("/page")
     public ResponseEntity<PagedModel<DishShortDTO>> getAllDishesShortByPage(@PageableDefault(sort = "category") Pageable pageable) {
-        log.debug("Get dishes short by page: {}", pageable);
-        PagedModel<DishShortDTO> pages = new PagedModel<> (dishesService.findAll(pageable).map(dishMapper::convertToShortDTO));
+        log.info("API Request: Get dishes page. Page number={}, Page size={}, Sort={}",
+                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+
+        PagedModel<DishShortDTO> pages = new PagedModel<>(dishesService.findAll(pageable).map(dishMapper::convertToShortDTO));
+
+        log.info("API Response: Returned page with {} dishes. Total elements={}",
+                pages.getContent().size(), pages.getMetadata().totalElements());
         return ResponseEntity.ok(pages);
     }
 
+    /// Добавление блюда
     @PostMapping
     public ResponseEntity<Void> createDish(@Valid @RequestBody DishFullDTO dishFullDTO) {
-        log.debug("Creating new dish");
+        log.info("API Request: Create new dish with name='{}'", dishFullDTO.getName());
+
         dishesService.create(dishMapper.convertToEntity(dishFullDTO));
+
+        log.info("API Response: Dish successfully created");
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+
+    /// Обновление блюда
     @PatchMapping("/{id}")
     public ResponseEntity<Void> updateDish(@PathVariable Long id, @Valid @RequestBody DishFullDTO dishFullDTO) {
-        dishesService.update(dishMapper.convertToEntity(dishFullDTO),id);
-        return  ResponseEntity.ok().build();
-    }
+        log.info("API Request: Update dish id={}, new data='{}'", id, dishFullDTO);
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteDish(@PathVariable Long id) {
-        log.debug("Deleting dish with id: {}", id);
-        dishesService.deleteById(id);
+        dishesService.update(dishMapper.convertToEntity(dishFullDTO), id);
+
+        log.info("API Response: Dish id={} successfully updated", id);
         return ResponseEntity.ok().build();
     }
-}
+
+    /// Удаление блюда
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteDish(@PathVariable Long id) {
+        log.info("API Request: Delete dish id={}", id);
+
+        dishesService.deleteById(id);
+
+        log.info("API Response: Dish id={} successfully deleted", id);
+        return ResponseEntity.ok().build();
+    }
 /// PagedModel - обертка над Page - нужна в случае изменений в структуре Page

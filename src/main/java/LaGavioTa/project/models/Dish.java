@@ -36,9 +36,8 @@ public class Dish {
 
     @Column (name="prep_time")
     @Getter @Setter
-    @JdbcTypeCode(SqlTypes.INTERVAL_SECOND)
-    //@DurationUnit(ChronoUnit.MINUTES)
-    private Duration prepTime;
+    // @JdbcTypeCode(SqlTypes.INTERVAL_SECOND)
+    private Integer prepTime;
 
     @Column(name = "portion_size")
     @Getter @Setter
@@ -53,6 +52,8 @@ public class Dish {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    /// У многих блюд много ингредиентов
+    /// У одного блюда много ингредиентов и нет их повторов
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name="dishes_ingredients",

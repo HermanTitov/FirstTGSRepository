@@ -21,23 +21,31 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 public class DishFullDTO {
+
     @NotBlank
     @Size(min = 1, max = 100)
     private String title;
+
     @NotBlank
     @Size(min = 1, max = 100)
     private String description;
 
-    private Duration prepTime;
+    @NotNull
+    @Positive
+    private Integer prepTimeMinutes;
 
     @NotNull
-    @Min(0)
+    @Positive
     private Integer portionSize;
+
     @NotNull
-    @Min(0)
+    @DecimalMin(valuet = 0.0, inclusive = true)
     private BigDecimal cost;
+
     @Valid
     private CategoryDTO category;
+
     @Valid
-    private List<IngredientDTO> ingredients;
+    @NotEmpty
+    private List<@NotNull IngredientDTO> ingredients;
 }

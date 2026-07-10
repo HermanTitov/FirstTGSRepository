@@ -6,6 +6,8 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
+/// Кастомная обертка для ошибок
+
 @Getter
 @AllArgsConstructor
 public class ResponseError {

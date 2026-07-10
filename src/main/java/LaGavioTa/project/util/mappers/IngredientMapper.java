@@ -5,6 +5,8 @@ import LaGavioTa.project.models.Ingredient;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 
+/// Интерфейс маппинга для ингредиентов
+
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface IngredientMapper {
     Ingredient convertToEntity(IngredientDTO dto);

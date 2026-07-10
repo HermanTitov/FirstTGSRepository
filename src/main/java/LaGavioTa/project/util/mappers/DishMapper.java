@@ -7,6 +7,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 import org.springframework.data.domain.Page;
 
+/// Интерфейс маппинга для блюд
+
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface DishMapper {
     DishShortDTO convertToShortDTO(Dish entity);
