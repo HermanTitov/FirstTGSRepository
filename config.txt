@@ -1,0 +1,8 @@
+# Форматирование SQL
+spring.jpa.properties.hibernate.format_sql=true
+
+# Логирование самих SQL запросов
+logging.level.org.hibernate.SQL=debug
+
+# Логирование параметров (переменных), подставляемых в SQL
+logging.level.org.hibernate.orm.jdbc.bind=trace
