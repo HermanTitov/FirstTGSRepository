@@ -1,6 +1,5 @@
 package LaGavioTa.project.util.errors;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

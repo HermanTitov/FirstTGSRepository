@@ -5,6 +5,7 @@ import LaGavioTa.project.repositories.IngredientsRepository;
 import LaGavioTa.project.util.errors.ObjectNotFoundException;
 import LaGavioTa.project.util.errors.UniqueValueException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

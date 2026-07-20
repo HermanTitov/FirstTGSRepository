@@ -5,6 +5,7 @@ import LaGavioTa.project.services.IngredientsService;
 import LaGavioTa.project.util.mappers.IngredientMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +15,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/ingredients")
-@Slf4j // Аннотация от Lombok для активации логгера
+@Slf4j
 public class IngredientsController {
 
     private final IngredientMapper ingredientMapper;

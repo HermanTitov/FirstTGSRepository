@@ -4,15 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-import org.springframework.boot.convert.DurationFormat;
-import org.springframework.boot.convert.DurationUnit;
 
 import java.math.BigDecimal;
-import java.security.Timestamp;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Entity

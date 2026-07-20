@@ -7,10 +7,7 @@ import LaGavioTa.project.util.mappers.DishMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
@@ -18,13 +15,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/dishes") // Предполагаемый маппинг для контекста блюд
 @Slf4j
-public class DishController {
+public class MenuController {
 
     private final DishesService dishesService;
     private final DishMapper dishMapper;
@@ -80,7 +75,7 @@ public class DishController {
     /// Добавление блюда
     @PostMapping
     public ResponseEntity<Void> createDish(@Valid @RequestBody DishFullDTO dishFullDTO) {
-        log.info("API Request: Create new dish with name='{}'", dishFullDTO.getName());
+        log.info("API Request: Create new dish with name='{}'", dishFullDTO.getTitle());
 
         dishesService.create(dishMapper.convertToEntity(dishFullDTO));
 
@@ -109,4 +104,5 @@ public class DishController {
         log.info("API Response: Dish id={} successfully deleted", id);
         return ResponseEntity.ok().build();
     }
+}
 /// PagedModel - обертка над Page - нужна в случае изменений в структуре Page

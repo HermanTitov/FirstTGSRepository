@@ -4,7 +4,7 @@ import LaGavioTa.project.util.errors.ObjectNotFoundException;
 import LaGavioTa.project.util.errors.ResponseError;
 import LaGavioTa.project.util.errors.UniqueValueException;
 
-import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

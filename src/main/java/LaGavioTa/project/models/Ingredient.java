@@ -1,13 +1,13 @@
 package LaGavioTa.project.models;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name="ingredients")
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Ingredient {
 
     @Id
