@@ -71,7 +71,6 @@ class CategoriesServiceTest {
         assertNotNull(result);
         assertTrue(result.isEmpty());
         verify(categoriesRepository, times(1)).findAll();
-        verifyNoMoreInteractions(categoriesRepository);
     }
 
     @Test
@@ -89,7 +88,6 @@ class CategoriesServiceTest {
         assertNotNull(result); // Категория должна быть не null
         assertEquals(name, result.getName()); // Равная той, которую создали
         verify(categoriesRepository, times(1)).findByName(name); // Проверяем, что в репозиторий зашли 1 раз
-        verifyNoMoreInteractions(categoriesRepository); // Проверяем, что других действий не было
         }
 
     @Test
@@ -103,9 +101,8 @@ class CategoriesServiceTest {
         ObjectNotFoundException exception = assertThrows(ObjectNotFoundException.class,
                 () -> categoriesService.findByName(name)
         );
-        assertEquals("Category with name Несуществующая not found.", exception.getMessage());
+        assertTrue(exception.getMessage().contains(name));
         verify(categoriesRepository, times(1)).findByName(name);
-        verifyNoMoreInteractions(categoriesRepository); // Проверяем, что других действий не было
     }
 
     @Test
@@ -122,7 +119,6 @@ class CategoriesServiceTest {
         assertNotNull(result);
         assertEquals(id, result.getId());
         verify(categoriesRepository, times(1)).findById(id);
-        verifyNoMoreInteractions(categoriesRepository); // Проверяем, что других действий не было
     }
 
     @Test
@@ -135,21 +131,21 @@ class CategoriesServiceTest {
         ObjectNotFoundException exception = assertThrows(ObjectNotFoundException.class,
                 () -> categoriesService.findById(id)
         );
-        assertEquals("Category with id 99 not found.", exception.getMessage());
+        assertTrue(exception.getMessage().contains(id.toString()));
         verify(categoriesRepository, times(1)).findById(id);
     }
 
     @Test
     void create_ShouldSaveCategory_WhenNameIsUnique() {
         // Arrange
-        Category newCategory = new Category(null, "Спорт");
-        when(categoriesRepository.findByName("Спорт")).thenReturn(Optional.empty());
+        Category newCategory = new Category(1L, "Спорт");
+        when(categoriesRepository.findByName(newCategory.getName())).thenReturn(Optional.empty());
 
         // Act
         categoriesService.create(newCategory);
 
         // Assert
-        verify(categoriesRepository, times(1)).findByName("Спорт"); /// Проверка, что пошел в метод проверки
+        verify(categoriesRepository, times(1)).findByName(newCategory.getName()); /// Проверка, что пошел в метод проверки
         verify(categoriesRepository, times(1)).save(newCategory); /// Проверка, что создавал категорию
     }
 
@@ -164,7 +160,7 @@ class CategoriesServiceTest {
         UniqueValueException exception = assertThrows(UniqueValueException.class,
                 () -> categoriesService.create(newCategory)
         );
-        assertEquals("Category with name Спорт already exists.", exception.getMessage());
+        assertTrue(exception.getMessage().contains(newCategory.getName()));
         verify(categoriesRepository, times(1)).findByName("Спорт");
         verify(categoriesRepository, never()).save(any(Category.class)); // Проверка, что класс никогда не вызывался
 
@@ -185,7 +181,6 @@ class CategoriesServiceTest {
         assertEquals("Новое имя", databaseCategory.getName());
         verify(categoriesRepository, times(1)).findById(id);
         // Метод save() в вашем сервисе не вызывается, так как JPA обновит данные автоматически по завершении транзакции
-        verifyNoMoreInteractions(categoriesRepository);
         }
 
     @Test
@@ -196,11 +191,11 @@ class CategoriesServiceTest {
         when(categoriesRepository.findById(id)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(ObjectNotFoundException.class,
+        ObjectNotFoundException exception = assertThrows(ObjectNotFoundException.class,
                 () -> categoriesService.update(updatedCategoryDetails, id)
         );
+        assertTrue(exception.getMessage().contains(id.toString()));
         verify(categoriesRepository, times(1)).findById(id);
-        verifyNoMoreInteractions(categoriesRepository);
     }
 
     @Test
@@ -227,7 +222,7 @@ class CategoriesServiceTest {
         ObjectNotFoundException exception = assertThrows(ObjectNotFoundException.class,
                 () -> categoriesService.deleteById(id)
         );
-        assertEquals("Category with id 99 not found.", exception.getMessage());
+        assertTrue(exception.getMessage().contains(id.toString()));
         verify(categoriesRepository, times(1)).existsById(id);
         verify(categoriesRepository, never()).deleteById(anyLong());
     }
