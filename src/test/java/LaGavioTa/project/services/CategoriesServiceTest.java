@@ -178,8 +178,6 @@ class CategoriesServiceTest {
         Category updatedCategoryDetails = new Category(null, "Новое имя");
 
         when(categoriesRepository.findById(id)).thenReturn(Optional.of(databaseCategory));
-        when(categoriesRepository.save(any(Category.class))).thenReturn(databaseCategory);
-
         // Act
         categoriesService.update(updatedCategoryDetails, id);
 
@@ -187,7 +185,6 @@ class CategoriesServiceTest {
         assertEquals("Новое имя", databaseCategory.getName());
         verify(categoriesRepository, times(1)).findById(id);
         // Метод save() в вашем сервисе не вызывается, так как JPA обновит данные автоматически по завершении транзакции
-        verify(categoriesRepository, times(1)).save(databaseCategory); // ТРЕБУЕМ вызова save()
         verifyNoMoreInteractions(categoriesRepository);
         }
 
