@@ -1,0 +1,216 @@
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class IngredientServiceTest {
+
+    @Mock
+    private IngredientRepository ingredientsRepository;
+
+    @InjectMocks
+    private IngredientService ingredientsService;
+
+    // --- FIND ALL SCENARIOS ---
+
+    @Test
+    void findAll_ShouldReturnListOfIngredients() {
+        // Arrange
+        Ingredient carrot = new Ingredient(1L, "Морковь");
+        Ingredient corn = new Ingredient(2L, "Кукуруза");
+        when(ingredientsRepository.findAll()).thenReturn(Arrays.asList(carrot, corn));
+
+        // Act
+        List<Ingredient> result = ingredientsService.findAll();
+
+        // Assert (AssertJ проверяет и размер, и порядок, и отсутствие null одной строкой)
+        assertThat(result).containsExactly(carrot, corn);
+    }
+
+    @Test
+    void findAll_ShouldReturnEmptyList_WhenNoIngredients() {
+        // Arrange
+        when(ingredientsRepository.findAll()).thenReturn(Collections.emptyList());
+
+        // Act
+        List<Ingredient> result = ingredientsService.findAll();
+
+        // Assert
+        assertThat(result).isEmpty();
+    }
+
+    // --- FIND BY NAME SCENARIOS ---
+
+    @Test
+    void findByName_ShouldReturnIngredient_WhenFound() {
+        // Arrange
+        String name = "Морковь";
+        Ingredient expected = new Ingredient(1L, name);
+        when(ingredientsRepository.findByName(name)).thenReturn(Optional.of(expected));
+
+        // Act
+        Ingredient result = ingredientsService.findByName(name);
+
+        // Assert (Сравниваем объект целиком — это лучшая практика)
+        assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    void findByName_ShouldThrowObjectNotFoundException_WhenNotFound() {
+        // Arrange
+        String name = "Несуществующий";
+        when(ingredientsRepository.findByName(name)).thenReturn(Optional.empty());
+
+        // Act & Assert (Современный стиль AssertJ для проверки исключений)
+        assertThatThrownBy(() -> ingredientsService.findByName(name))
+                .isInstanceOf(ObjectNotFoundException.class)
+                .hasMessageContaining(name);
+    }
+
+    // --- FIND BY ID SCENARIOS ---
+
+    @Test
+    void findById_ShouldReturnIngredient_WhenFound() {
+        // Arrange
+        Long id = 1L;
+        Ingredient expected = new Ingredient(id, "Морковь");
+        when(ingredientsRepository.findById(id)).thenReturn(Optional.of(expected));
+
+        // Act
+        Ingredient result = ingredientsService.findById(id);
+
+        // Assert
+        assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    void findById_ShouldThrowObjectNotFoundException_WhenNotFound() {
+        // Arrange
+        Long id = 99L;
+        when(ingredientsRepository.findById(id)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> ingredientsService.findById(id))
+                .isInstanceOf(ObjectNotFoundException.class)
+                .hasMessageContaining(id.toString());
+    }
+
+    // --- DELETE SCENARIOS ---
+
+    @Test
+    void deleteById_ShouldDeleteIngredient_WhenIngredientExists() {
+        // Arrange
+        Long id = 1L;
+        when(ingredientsRepository.existsById(id)).thenReturn(true);
+
+        // Act
+        ingredientsService.deleteById(id);
+
+        // Assert (Проверяем только вызовы методов)
+        verify(ingredientsRepository).existsById(id);
+        verify(ingredientsRepository).deleteById(id);
+    }
+
+    @Test
+    void deleteById_ShouldThrowObjectNotFoundException_WhenIdDoesNotExist() {
+        // Arrange
+        Long id = 99L;
+        when(ingredientsRepository.existsById(id)).thenReturn(false);
+
+        // Act & Assert
+        assertThatThrownBy(() -> ingredientsService.deleteById(id))
+                .isInstanceOf(ObjectNotFoundException.class)
+                .hasMessageContaining(id.toString());
+
+        verify(ingredientsRepository).existsById(id);
+        verifyNoMoreInteractions(ingredientsRepository);
+    }
+
+    // --- CREATE SCENARIOS ---
+
+    @Test
+    void create_ShouldCreateIngredient_WhenNameIsUnique() {
+        // Arrange
+        String name = "Морковь";
+        Ingredient toSave = new Ingredient(null, name);
+        Ingredient saved = new Ingredient(1L, name);
+
+        when(ingredientsRepository.findByName(name)).thenReturn(Optional.empty());
+        when(ingredientsRepository.save(any(Ingredient.class))).thenReturn(saved);
+
+        // Act
+        Ingredient result = ingredientsService.create(toSave);
+
+        // Assert
+        assertThat(result).isEqualTo(saved);
+        verify(ingredientsRepository).findByName(name);
+        verify(ingredientsRepository).save(toSave);
+    }
+
+    @Test
+    void create_ShouldThrowUniqueValueException_WhenNameAlreadyExists() {
+        // Arrange
+        String name = "Морковь";
+        Ingredient toSave = new Ingredient(null, name);
+        Ingredient existing = new Ingredient(1L, name);
+
+        when(ingredientsRepository.findByName(name)).thenReturn(Optional.of(existing));
+
+        // Act & Assert
+        assertThatThrownBy(() -> ingredientsService.create(toSave))
+                .isInstanceOf(UniqueValueException.class)
+                .hasMessageContaining(name);
+
+        verify(ingredientsRepository).findByName(name);
+        verify(ingredientsRepository, never()).save(any(Ingredient.class));
+    }
+
+    // --- UPDATE SCENARIOS ---
+
+    @Test
+    void update_ShouldUpdateIngredient_WhenIngredientFound() {
+        // Arrange
+        Long id = 1L;
+        String newName = "Кукуруза";
+        Ingredient oldIngredient = new Ingredient(id, "Морковь");
+        Ingredient updateData = new Ingredient(null, newName);
+
+        when(ingredientsRepository.findById(id)).thenReturn(Optional.of(oldIngredient));
+
+        // Act
+        ingredientsService.update(updateData, id);
+
+        // Assert (Для Dirty Checking проверяем, что старый объект изменил состояние)
+        assertThat(oldIngredient.getName()).isEqualTo(newName);
+        verify(ingredientsRepository).findById(id);
+    }
+
+    @Test
+    void update_ShouldThrowObjectNotFoundException_WhenIdDoesNotFound() {
+        // Arrange
+        Long id = 99L;
+        Ingredient updateData = new Ingredient(null, "Морковь");
+        when(ingredientsRepository.findById(id)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> ingredientsService.update(updateData, id))
+                .isInstanceOf(ObjectNotFoundException.class)
+                .hasMessageContaining(id.toString());
+
+        verify(ingredientsRepository).findById(id);
+        verifyNoMoreInteractions(ingredientsRepository);
+    }
+}

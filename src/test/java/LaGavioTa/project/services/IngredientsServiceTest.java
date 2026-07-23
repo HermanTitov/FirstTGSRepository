@@ -4,6 +4,7 @@ import LaGavioTa.project.models.Ingredient;
 import LaGavioTa.project.repositories.IngredientsRepository;
 import LaGavioTa.project.util.errors.ObjectNotFoundException;
 import LaGavioTa.project.util.errors.UniqueValueException;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -18,6 +19,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@Slf4j
 @ExtendWith(MockitoExtension.class) // Подключает Mockito к JUnit5
 class IngredientsServiceTest {
     @Mock
@@ -26,120 +28,106 @@ class IngredientsServiceTest {
     @InjectMocks
     private IngredientsService ingredientsService;
 
-    // Arrange
-    // Act
-    // Assert
+    @Test
+    void findAllByNames_ShouldReturnListOfIngredients(){
+        Long id1 = 1L;
+        Long id2 = 2L;
+        String name1 = "Морковь";
+        String name2 = "Кукуруза";
+        List<Ingredient> searchingIngredients = List.of(new Ingredient(id1,name1), new Ingredient(id2,name2));
+        when(ingredientsRepository.findAllByNameIn(List.of(name1,name2))).thenReturn(searchingIngredients);
+
+        List<Ingredient> returnedIngredients = ingredientsService.findAllByNames(List.of(name1,name2));
+
+        assertEquals(id1,returnedIngredients.get(0).getId());
+        assertEquals(id2,returnedIngredients.get(1).getId());
+        assertEquals(2, returnedIngredients.size());
+    }
+    @Test
+    void findAllByNames_ShouldThrowsObjectNotFoundException_WhenNoFoundOne(){
+        when(ingredientsRepository.findAllByNameIn(List.of("Морковь","Кукуруза"))).thenReturn(List.of(new Ingredient(1L,"Кукуруза")));
+
+        ObjectNotFoundException exception = assertThrows(
+                ObjectNotFoundException.class,
+                () -> ingredientsService.findAllByNames(List.of("Морковь","Кукуруза")));
+        assertTrue(exception.getMessage().contains("Some ingredients were not found"));
+    }
 
     @Test
     void findAll_ShouldReturnListOfIngredients() {
-        // Arrange
-        Ingredient ingredient1 = new Ingredient(1L, "Zanahoria");
-        Ingredient ingredient2 = new Ingredient(2L, "Maiz");
-
+        Ingredient ingredient1 = new Ingredient(1L, "Морковь");
+        Ingredient ingredient2 = new Ingredient(2L, "Кукуруза");
         when(ingredientsRepository.findAll()).thenReturn(Arrays.asList(ingredient1, ingredient2));
 
-        // Act
         List<Ingredient> ingredients = ingredientsService.findAll();
 
-        // Assert
-        assertNotNull(ingredients);
         assertEquals(2, ingredients.size());
-        assertEquals("Zanahoria", ingredients.get(0).getName());
-        assertEquals("Maiz", ingredients.get(1).getName());
-        verify(ingredientsRepository, times(1)).findAll();
+        assertEquals("Морковь", ingredients.get(0).getName());
+        assertEquals("Кукуруза", ingredients.get(1).getName());
     }
 
     @Test
     void findAll_ShouldReturnEmptyList_WhenNoIngredients() {
-        // Arrange
         when(ingredientsRepository.findAll()).thenReturn(Collections.emptyList());
 
-        // Act
         List<Ingredient> ingredients = ingredientsService.findAll();
 
-        // Assert
-        assertNotNull(ingredients);
         assertTrue(ingredients.isEmpty());
-        verify(ingredientsRepository, times(1)).findAll();
     }
 
     @Test
     void findByName_ShouldReturnIngredient_WhenFound() {
-        // Arrange
-        Ingredient ingredient = new Ingredient(1L, "Zanahoria");
+        Long id = 1L;
+        String name = "Морковь";
+        when(ingredientsRepository.findByName(name)).thenReturn(Optional.of(new Ingredient(id,name)));
 
-        // Act
-        when(ingredientsRepository.findByName(ingredient.getName())).thenReturn(Optional.of(ingredient));
+        Ingredient foundIngredient = ingredientsService.findByName(name);
 
-        Ingredient foundIngredient = ingredientsService.findByName(ingredient.getName());
-
-        // Assert
-        assertNotNull(foundIngredient);
-        assertEquals(ingredient.getName(), foundIngredient.getName());
-        verify(ingredientsRepository, times(1)).findByName(ingredient.getName());
-        verifyNoMoreInteractions(ingredientsRepository);
+        assertEquals(name, foundIngredient.getName());
     }
 
     @Test
     void findByName_ShouldThrowObjectNotFoundException_WhenNotFound() {
-        // Arrange
-        Ingredient ingredient = new Ingredient(1L, "Zanahoria");
-        when(ingredientsRepository.findByName(ingredient.getName())).thenReturn(Optional.empty());
+        String name = "Несуществующий";
+        when(ingredientsRepository.findByName(name)).thenReturn(Optional.empty());
 
-        // Act & Assert
-        ObjectNotFoundException exception = assertThrows(ObjectNotFoundException.class,
-                () -> ingredientsService.findByName(ingredient.getName()));
-        assertTrue(exception.getMessage().contains(ingredient.getName()));
-        verify(ingredientsRepository, times(1)).findByName(ingredient.getName());
-        verifyNoMoreInteractions(ingredientsRepository);
+        ObjectNotFoundException exception = assertThrows(
+                ObjectNotFoundException.class,()
+                -> ingredientsService.findByName(name));
+
+        assertTrue(exception.getMessage().contains(name));
     }
 
     @Test
     void findById_ShouldReturnIngredient_WhenFound() {
-        // Arrange
-        Ingredient ingredient = new Ingredient(1L, "Zanahoria");
-        when(ingredientsRepository.findById(ingredient.getId())).thenReturn(Optional.of(ingredient));
+        Long id = 1L;
+        when(ingredientsRepository.findById(id)).thenReturn(Optional.of(new Ingredient(id,null)));
 
-        // Act
-        Ingredient foundIngredient = ingredientsService.findById(ingredient.getId());
+        Ingredient foundIngredient = ingredientsService.findById(id);
 
-        // Assert
-        assertNotNull(foundIngredient);
-        assertEquals(ingredient, foundIngredient);
-        verify(ingredientsRepository, times(1)).findById(ingredient.getId());
-        verifyNoMoreInteractions(ingredientsRepository);
-
-        /// Можно ли оставить так
-        /// Мы сравниваем объект с объектом
-        /// По идее, по хэш коду
-        /// Либо по Id/Name сравнивать
-        /// Либо че нахуй
+        assertEquals(id, foundIngredient.getId());
     }
 
     @Test
     void findById_ShouldThrowObjectNotFoundException_WhenNotFound() {
-        /// Arrange
-        Ingredient ingredient = new Ingredient(99L, "Zanahoria");
-        when(ingredientsRepository.findById(ingredient.getId())).thenReturn(Optional.empty());
+        Long id = 99L;
+        when(ingredientsRepository.findById(id)).thenReturn(Optional.empty());
 
-        /// Act & Assert
-        ObjectNotFoundException exception = assertThrows(ObjectNotFoundException.class,
-                () -> ingredientsService.findById(ingredient.getId()));
-        assertTrue(exception.getMessage().contains(ingredient.getId().toString()));
-        verify(ingredientsRepository, times(1)).findById(ingredient.getId());
+        ObjectNotFoundException exception = assertThrows(
+                ObjectNotFoundException.class,
+                () -> ingredientsService.findById(id));
+
+        assertTrue(exception.getMessage().contains(id.toString()));
     }
     @Test
     void deleteById_ShouldDeleteIngredient_WhenIngredientExists() {
-        /// arrange
-        Long id = 99L;
+        Long id = 1L;
         when(ingredientsRepository.existsById(id)).thenReturn(true);
 
-        /// act
         ingredientsService.deleteById(id);
 
-        // assert
-        verify(ingredientsRepository, times(1)).existsById(id);
-        verify(ingredientsRepository, times(1)).deleteById(id);
+        verify(ingredientsRepository).existsById(id);
+        verify(ingredientsRepository).deleteById(id);
     }
 
     @Test
@@ -147,59 +135,98 @@ class IngredientsServiceTest {
         Long id = 99L;
         when(ingredientsRepository.existsById(id)).thenReturn(false);
 
-        ObjectNotFoundException exception = assertThrows(ObjectNotFoundException.class,
+        ObjectNotFoundException exception = assertThrows(
+                ObjectNotFoundException.class,
                 () -> ingredientsService.deleteById(id));
+
         assertTrue(exception.getMessage().contains(id.toString()));
-        verify(ingredientsRepository, times(1)).existsById(id);
-        verify(ingredientsRepository, never()).deleteById(id);
+        verify(ingredientsRepository).existsById(id);
+        verifyNoMoreInteractions(ingredientsRepository);
     }
 
     @Test
     void create_ShouldCreateIngredient_WhenNameIsUnique() {
-        Ingredient ingredient = new Ingredient(1L, "Zanahoria");
-        when(ingredientsRepository.findByName(ingredient.getName())).thenReturn(Optional.empty());
+        Long id = 1L;
+        String name = "Морковь";
+        Ingredient ingredientToSave= new Ingredient(null, name);
+        when(ingredientsRepository.findByName(name)).thenReturn(Optional.empty());
+        when(ingredientsRepository.save(any(Ingredient.class))).thenReturn(new Ingredient(id, name));
 
-        ingredientsService.create(ingredient);
+        ingredientsService.create(ingredientToSave);
 
-        verify(ingredientsRepository, times(1)).findByName(ingredient.getName());
-        verify(ingredientsRepository, times(1)).save(ingredient);
+        verify(ingredientsRepository).findByName(name);
+        verify(ingredientsRepository).save(ingredientToSave);
     }
 
     @Test
     void create_ShouldThrowUniqueValueException_WhenNameAlreadyExists() {
-        Ingredient ingredient = new Ingredient(1L, "Zanahoria");
-        when(ingredientsRepository.findByName(ingredient.getName())).thenReturn(Optional.of(ingredient));
+        Long id = 1L;
+        String name = "Морковь";
+        Ingredient ingredientToSave = new Ingredient(null,name);
+        when(ingredientsRepository.findByName(name)).thenReturn(Optional.of(new Ingredient(id, name)));
 
-        UniqueValueException exception = assertThrows(UniqueValueException.class,
-                () -> ingredientsService.create(ingredient));
+        UniqueValueException exception = assertThrows(
+                UniqueValueException.class,
+                () -> ingredientsService.create(ingredientToSave));
 
-        assertTrue(exception.getMessage().contains(ingredient.getName()));
-        verify(ingredientsRepository, times(1)).findByName(ingredient.getName());
-        verify(ingredientsRepository, never()).save(ingredient);
+        assertTrue(exception.getMessage().contains(name));
+        verify(ingredientsRepository).findByName(name);
+        verify(ingredientsRepository, never()).save(any(Ingredient.class));
     }
 
     @Test
     void update_ShouldUpdateIngredient_WhenIngredientFound() {
-        Ingredient oldIngredient = new Ingredient(1L, "Zanahoria");
-        Ingredient newIngredient = new Ingredient(1L, "Maiz");
-        when(ingredientsRepository.findById(oldIngredient.getId())).thenReturn(Optional.of(oldIngredient));
+        Long id = 1L;
+        String oldName = "Морковь";
+        String newName = "Кукуруза";
+        Ingredient oldIngredient = new Ingredient(id, oldName);
+        Ingredient newIngredient = new Ingredient(null, newName);
+        when(ingredientsRepository.findById(id)).thenReturn(Optional.of(oldIngredient));
 
-        ingredientsService.update(newIngredient, oldIngredient.getId());
+        ingredientsService.update(newIngredient, id);
 
-        assertEquals(newIngredient.getName(), oldIngredient.getName());
-        verify(ingredientsRepository, times(1)).findById(oldIngredient.getId());
+        assertEquals(newName, oldIngredient.getName());
+        verify(ingredientsRepository).findById(id);
     }
     @Test
     void update_ShouldThrowObjectNotFoundException_WhenIdDoesNotFound() {
         Long id = 99L;
-        Ingredient updatedIngredient = new Ingredient(1L, "Zanahoria");
+        Ingredient updatedIngredient = new Ingredient(1L, "Морковь");
         when(ingredientsRepository.findById(id)).thenReturn(Optional.empty());
 
-        ObjectNotFoundException exception = assertThrows(ObjectNotFoundException.class,
+        ObjectNotFoundException exception = assertThrows(
+                ObjectNotFoundException.class,
                 ()-> ingredientsService.update(updatedIngredient, id));
         assertTrue(exception.getMessage().contains(id.toString()));
-        verify(ingredientsRepository, times(1)).findById(id);
-
-
+        verify(ingredientsRepository).findById(id);
+        verifyNoMoreInteractions(ingredientsRepository);
     }
 }
+
+    // Arrange
+    // Act
+    // Assert
+    // verify(ingredientsRepository, times(1)).findByName(ingredient.getName());
+    // verifyNoMoreInteractions(ingredientsRepository);
+    // verify(ingredientsRepository, never()).deleteById(id);
+
+
+    /// Оставлю на будущее
+    /// ПЕРЕОПРЕДЕЛИТЬ МЕТОДЫ hashCode() и equals() и СРАВНИВАТЬ В ТЕСТАХ ОБЪЕКТЫ
+    // Метод упадет с шикарным логом, если ХОТЯ БЫ ОДНО поле внутри объекта не совпадет
+    // assertThat(foundIngredient).isEqualTo(expectedIngredient);
+
+
+    // Стабинг
+    // when(что-то делается).thenReturn(верни)
+
+    // Верификация
+    // verify(репозиторий, количество вызовоз). метод
+
+    // Утверждение
+    // assertNotNull(result) - Объект не пустой
+    // assertEquals(2,result.size) - размер списка 2
+    // assertEquals("Салаты", result.get(0).getName()); -- Проверка, что первый объект - Салаты
+
+
+    /// Тест структуры AAA Arange-Act-Assert

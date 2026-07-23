@@ -27,203 +27,153 @@ class CategoriesServiceTest {
     @InjectMocks
     private CategoriesService categoriesService; /// Создает реальный объект Категории - сервис
 
-    // Стабинг
-    // when(что-то делается).thenReturn(верни)
-
-    // Верификация
-    // verify(репозиторий, количество вызовоз). метод
-
-    // Утверждение
-    // assertNotNull(result) - Объект не пустой
-    // assertEquals(2,result.size) - размер списка 2
-    // assertEquals("Электроника", result.get(0).getName()); -- Проверка, что первый объект - Электроника
-
-
-    /// Тест структуры AAA Arange-Act-Assert
     @Test
     void findAll_ShouldReturnListOfCategories() {
-        // Arrange
-        Category cat1 = new Category(1L, "Электроника");
-        Category cat2 = new Category(2L, "Книги");
+        Category cat1 = new Category(1L, "Салаты");
+        Category cat2 = new Category(2L, "Супы");
         when(categoriesRepository.findAll()).thenReturn(Arrays.asList(cat1, cat2));
 
-        // Act
-        List<Category> result = categoriesService.findAll();
+        List<Category> categories = categoriesService.findAll();
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals("Электроника", result.get(0).getName());
-        assertEquals("Книги", result.get(1).getName());
-        verify(categoriesRepository, times(1)).findAll();
-        verifyNoMoreInteractions(categoriesRepository);
+        assertEquals(2, categories.size());
+        assertEquals("Салаты", categories.get(0).getName());
+        assertEquals("Супы", categories.get(1).getName());
     }
 
     @Test
     void findAll_ShouldReturnEmptyList_WhenNoCategoriesExist() {
-        // Arrange
         when(categoriesRepository.findAll()).thenReturn(Collections.emptyList());
 
-        // Act
-        List<Category> result = categoriesService.findAll();
+        List<Category> categories = categoriesService.findAll();
 
         // Assert
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-        verify(categoriesRepository, times(1)).findAll();
+        assertTrue(categories.isEmpty());
+    }
+    @Test
+    void findByName_ShouldReturnCategory_WhenFound() {
+        Long id = 1L;
+        String name = "Супы"; // Имя категории
+        when(categoriesRepository.findByName(name)).thenReturn(Optional.of(new Category(id, name)));
+
+        Category category = categoriesService.findByName(name);
+
+        assertEquals(name, category.getName());
     }
 
     @Test
-    void findByName_ShouldReturnCategory_WhenFound() {
-        // Arrange
-        String name = "Книги"; // Имя категории
-        Category category = new Category(1L, name); // Создали категорию
-        // Сделай так и верни Optional<Category>
-        when(categoriesRepository.findByName(name)).thenReturn(Optional.of(category));
-
-        // Act
-        Category result = categoriesService.findByName(name);
-
-        // Assert
-        assertNotNull(result); // Категория должна быть не null
-        assertEquals(name, result.getName()); // Равная той, которую создали
-        verify(categoriesRepository, times(1)).findByName(name); // Проверяем, что в репозиторий зашли 1 раз
-        }
-
-    @Test
     void findByName_ShouldThrowObjectNotFoundException_WhenNotFound() {
-        // Arrange
         String name = "Несуществующая";
-        /// Сделай так и потом верни Optional<Null/Empty>
         when(categoriesRepository.findByName(name)).thenReturn(Optional.empty());
 
-        // Act & Assert
-        ObjectNotFoundException exception = assertThrows(ObjectNotFoundException.class,
-                () -> categoriesService.findByName(name)
-        );
+        ObjectNotFoundException exception = assertThrows(
+                ObjectNotFoundException.class,
+                () -> categoriesService.findByName(name));
         assertTrue(exception.getMessage().contains(name));
-        verify(categoriesRepository, times(1)).findByName(name);
     }
 
     @Test
     void findById_ShouldReturnCategory_WhenFound() {
-        // Arrange
         Long id = 1L;
-        Category category = new Category(id, "Одежда");
+        Category category = new Category(id, "Салаты");
         when(categoriesRepository.findById(id)).thenReturn(Optional.of(category));
 
         // Act
-        Category result = categoriesService.findById(id);
+        Category foundCategory = categoriesService.findById(id);
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(id, result.getId());
-        verify(categoriesRepository, times(1)).findById(id);
+        assertEquals(id, foundCategory.getId());
     }
 
     @Test
     void findById_ShouldThrowObjectNotFoundException_WhenNotFound() {
-        // Arrange
         Long id = 99L;
         when(categoriesRepository.findById(id)).thenReturn(Optional.empty());
 
-        // Act & Assert
-        ObjectNotFoundException exception = assertThrows(ObjectNotFoundException.class,
-                () -> categoriesService.findById(id)
-        );
+        ObjectNotFoundException exception = assertThrows(
+                ObjectNotFoundException.class,
+                () -> categoriesService.findById(id));
         assertTrue(exception.getMessage().contains(id.toString()));
-        verify(categoriesRepository, times(1)).findById(id);
     }
-
-    @Test
-    void create_ShouldSaveCategory_WhenNameIsUnique() {
-        // Arrange
-        Category newCategory = new Category(1L, "Спорт");
-        when(categoriesRepository.findByName(newCategory.getName())).thenReturn(Optional.empty());
-
-        // Act
-        categoriesService.create(newCategory);
-
-        // Assert
-        verify(categoriesRepository, times(1)).findByName(newCategory.getName()); /// Проверка, что пошел в метод проверки
-        verify(categoriesRepository, times(1)).save(newCategory); /// Проверка, что создавал категорию
-    }
-
-    @Test
-    void create_ShouldThrowUniqueValueException_WhenNameAlreadyExists() {
-        // Arrange
-        Category newCategory = new Category(null, "Спорт");
-        Category existingCategory = new Category(1L, "Спорт");
-        when(categoriesRepository.findByName("Спорт")).thenReturn(Optional.of(existingCategory));
-
-        // Act & Assert
-        UniqueValueException exception = assertThrows(UniqueValueException.class,
-                () -> categoriesService.create(newCategory)
-        );
-        assertTrue(exception.getMessage().contains(newCategory.getName()));
-        verify(categoriesRepository, times(1)).findByName("Спорт");
-        verify(categoriesRepository, never()).save(any(Category.class)); // Проверка, что класс никогда не вызывался
-
-    }
-
-    @Test
-    void update_ShouldChangeName_WhenCategoryExists() {
-        // Arrange
-        Long id = 1L;
-        Category databaseCategory = new Category(id, "Старое имя");
-        Category updatedCategoryDetails = new Category(null, "Новое имя");
-
-        when(categoriesRepository.findById(id)).thenReturn(Optional.of(databaseCategory));
-        // Act
-        categoriesService.update(updatedCategoryDetails, id);
-
-        // Assert
-        assertEquals("Новое имя", databaseCategory.getName());
-        verify(categoriesRepository, times(1)).findById(id);
-        // Метод save() в вашем сервисе не вызывается, так как JPA обновит данные автоматически по завершении транзакции
-        }
-
-    @Test
-    void update_ShouldThrowObjectNotFoundException_WhenCategoryDoesNotExist() {
-        // Arrange
-        Long id = 99L;
-        Category updatedCategoryDetails = new Category(null, "Новое имя");
-        when(categoriesRepository.findById(id)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        ObjectNotFoundException exception = assertThrows(ObjectNotFoundException.class,
-                () -> categoriesService.update(updatedCategoryDetails, id)
-        );
-        assertTrue(exception.getMessage().contains(id.toString()));
-        verify(categoriesRepository, times(1)).findById(id);
-    }
-
     @Test
     void deleteById_ShouldDelete_WhenCategoryExists() {
-        // Arrange
         Long id = 1L;
         when(categoriesRepository.existsById(id)).thenReturn(true);
 
-        // Act
         categoriesService.deleteById(id);
 
-        // Assert
-        verify(categoriesRepository, times(1)).existsById(id);
-        verify(categoriesRepository, times(1)).deleteById(id);
+        verify(categoriesRepository).existsById(id);
+        verify(categoriesRepository).deleteById(id);
     }
 
     @Test
     void deleteById_ShouldThrowObjectNotFoundException_WhenIdDoesNotExist() {
-        // Arrange
         Long id = 99L;
         when(categoriesRepository.existsById(id)).thenReturn(false);
 
-        // Act & Assert
-        ObjectNotFoundException exception = assertThrows(ObjectNotFoundException.class,
-                () -> categoriesService.deleteById(id)
-        );
+        ObjectNotFoundException exception = assertThrows(
+                ObjectNotFoundException.class,
+                () -> categoriesService.deleteById(id));
         assertTrue(exception.getMessage().contains(id.toString()));
         verify(categoriesRepository, times(1)).existsById(id);
-        verify(categoriesRepository, never()).deleteById(anyLong());
+        verifyNoMoreInteractions(categoriesRepository);
+    }
+     @Test
+    void create_ShouldSaveCategory_WhenNameIsUnique() {
+        Long id = 1L;
+        String name = "Салаты";
+        Category categoryToSave = new Category(null, name);
+        when(categoriesRepository.findByName(name)).thenReturn(Optional.empty());
+        when(categoriesRepository.save(any(Category.class))).thenReturn(new Category(id, name));
+
+        categoriesService.create(categoryToSave);
+
+        verify(categoriesRepository).findByName(name);
+        verify(categoriesRepository).save(categoryToSave);
+    }
+
+    @Test
+    void create_ShouldThrowUniqueValueException_WhenNameAlreadyExists() {
+        Long id = 1L;
+        String name = "Салаты";
+        Category categoryToSave = new Category(null, name);
+        when(categoriesRepository.findByName(name)).thenReturn(Optional.of(new Category(id, name)));
+
+        UniqueValueException exception = assertThrows(
+                UniqueValueException.class,
+                () -> categoriesService.create(categoryToSave));
+
+        assertTrue(exception.getMessage().contains(name));
+        verify(categoriesRepository).findByName(name);
+        verify(categoriesRepository, never()).save(any(Category.class));
+    }
+
+    @Test
+    void update_ShouldChangeName_WhenCategoryExists() {
+        Long id = 1L;
+        String oldName = "Салаты";
+        String newName = "Супы";
+        Category oldCategory = new Category(id, oldName);
+        Category updatedCategory = new Category(null, newName);
+        when(categoriesRepository.findById(id)).thenReturn(Optional.of(oldCategory));
+
+        categoriesService.update(updatedCategory, id);
+
+        assertEquals(newName, oldCategory.getName());
+        verify(categoriesRepository).findById(id);
+        }
+
+    @Test
+    void update_ShouldThrowObjectNotFoundException_WhenCategoryDoesNotExist() {
+        Long id = 99L;
+        String name = "Салаты";
+        Category updatedCategory = new Category(null, name);
+        when(categoriesRepository.findById(id)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        ObjectNotFoundException exception = assertThrows(
+                ObjectNotFoundException.class,
+                () -> categoriesService.update(updatedCategory, id));
+
+        assertTrue(exception.getMessage().contains(id.toString()));
+        verifyNoMoreInteractions(categoriesRepository);
     }
 }
